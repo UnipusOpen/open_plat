@@ -1,0 +1,15 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+*.log
+
+### VS Code ###
+.vscode/
+tpid
+.classpath
+.project
+.settings
+
+target/
