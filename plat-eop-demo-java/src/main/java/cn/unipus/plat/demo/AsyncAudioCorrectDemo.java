@@ -9,6 +9,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * @Author: hushun
@@ -16,13 +19,36 @@ import java.util.concurrent.TimeUnit;
  * @Description: 异步音频测评demo
  */
 public class AsyncAudioCorrectDemo {
-    private String appId = "git13tz10skijcgmlrv65yc2x";
-    private String appKey = "8DACCF71669AD19676AF03F89D288085";
-    private String asyncCorrectUrl = "https://open-test.unipus.cn/openapi/clio/v1/correct/off/fl";
-    private String asycCorrectResultQueryUrl = "https://open-test.unipus.cn/openapi/clio/v1/correct/query";
+
+    private String appId;
+    private String appKey;
+    private String asyncAudioCorrectUrl;
+    private String asyncAudioQueryUrl;
+
     private static OkHttpClient okHttpClient = null;
     private static int queryTimeout = 120;
 
+    public AsyncAudioCorrectDemo() {
+        loadConfig();
+    }
+
+    private void loadConfig() {
+        Properties properties = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+            if (input == null) {
+                System.out.println("未找到配置文件");
+                return;
+            }
+            properties.load(input);
+            appId = properties.getProperty("plat.appId");
+            appKey = properties.getProperty("plat.appKey");
+            asyncAudioCorrectUrl = properties.getProperty("plat.asyncAudioCorrectUrl");
+            asyncAudioQueryUrl = properties.getProperty("plat.asyncAudioQueryUrl");
+        } catch (IOException e) {
+            System.out.println("加载配置文件时出错");
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
         okHttpClient = new OkHttpClient
@@ -76,7 +102,7 @@ public class AsyncAudioCorrectDemo {
 
     public String queryAsyncCorrect(String correctId, String targetGroup) {
         Request okHttpRequest = new Request.Builder()
-                .url(asycCorrectResultQueryUrl + "?correctId=" + correctId + "&targetGroup=" + targetGroup)
+                .url(asyncAudioQueryUrl + "?correctId=" + correctId + "&targetGroup=" + targetGroup)
                 .addHeader("p-app-id", appId)
                 .addHeader("p-cip-txt", PCipTxtGenerator.getCipTxt(appKey))
                 .get()
@@ -112,8 +138,9 @@ public class AsyncAudioCorrectDemo {
         RequestBody body = RequestBody.create(mediaType, JSONObject.toJSONString(request));
         System.out.println("提交异步测评请求参数: " + JSONObject.toJSONString(request));
 
+        System.out.println("url=" + asyncAudioCorrectUrl);
         Request okHttpRequest = new Request.Builder()
-                .url(asyncCorrectUrl)
+                .url(asyncAudioCorrectUrl)
                 .addHeader("p-app-id", appId)
                 .addHeader("p-cip-txt", PCipTxtGenerator.getCipTxt(appKey))
                 .post(body)

@@ -6,6 +6,10 @@ import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,13 +18,30 @@ import java.util.concurrent.TimeUnit;
  * @Description: 异步写作测评demo
  */
 public class AsyncWriteCorrectDemo {
-    private String appId = "git13tz10skijcgmlrv65yc2x";
-    private String appKey = "8DACCF71669AD19676AF03F89D288085";
-    private String asyncCorrectUrl = "https://open-test.unipus.cn/openapi/flaubert/v1/correct";
-    private String asycCorrectResultQueryUrl = "https://open-test.unipus.cn/api/flaubert/v1/correct/query";
+    private String appId;
+    private String appKey;
+    private String asyncWriteCorrectUrl;
+    private String asyncWriteQueryUrl;
     private static OkHttpClient okHttpClient = null;
     private static int queryTimeout = 120;
 
+    public AsyncWriteCorrectDemo() {
+        loadConfig();
+    }
+
+    private void loadConfig() {
+        Properties properties = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+            properties.load(input);
+            appId = properties.getProperty("plat.appId");
+            appKey = properties.getProperty("plat.appKey");
+            asyncWriteCorrectUrl = properties.getProperty("plat.asyncWriteCorrectUrl");
+            asyncWriteQueryUrl = properties.getProperty("plat.asyncWriteQueryUrl");
+        } catch (IOException e) {
+            System.out.println("加载配置文件异常: ");
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
         okHttpClient = new OkHttpClient
@@ -71,7 +92,7 @@ public class AsyncWriteCorrectDemo {
 
     public String queryAsyncCorrect(String correctId, String targetGroup) {
         Request okHttpRequest = new Request.Builder()
-                .url(asycCorrectResultQueryUrl + "?correctId=" + correctId + "&targetGroup=" + targetGroup)
+                .url(asyncWriteQueryUrl + "?correctId=" + correctId + "&targetGroup=" + targetGroup)
                 .addHeader("p-app-id", appId)
                 .addHeader("p-cip-txt", PCipTxtGenerator.getCipTxt(appKey))
                 .get()
@@ -95,13 +116,15 @@ public class AsyncWriteCorrectDemo {
         WriteRequest request = new WriteRequest();
         request.setTitle(title);
         request.setContent(content);
+        request.setRequestId(UUID.randomUUID().toString().replaceAll("-", ""));
+        request.setRequestId("rid");
 
         MediaType mediaType = MediaType.get("application/json; charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, JSONObject.toJSONString(request));
         System.out.println("提交异步测评请求参数: " + JSONObject.toJSONString(request));
 
         Request okHttpRequest = new Request.Builder()
-                .url(asyncCorrectUrl)
+                .url(asyncWriteCorrectUrl)
                 .addHeader("p-app-id", appId)
                 .addHeader("p-cip-txt", PCipTxtGenerator.getCipTxt(appKey))
                 .post(body)
